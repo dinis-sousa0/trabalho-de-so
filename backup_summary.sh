@@ -98,12 +98,12 @@ copia_recursiva() {
           mkdir -p "$destino"
           if cp -a "$item" "$destino/$nome_base"; then
             if [ $atualizacao == 0 ]; then
-            echo copiando
+              #echo copiando
               ((COPIADOS++))
               TAM_COP=$((TAM_COP + $(stat -c%s "$item"))) 
               #echo "Size of $item = $TAM_COP bytes."
             elif [ $atualizacao == 1 ]; then
-              echo atualizando
+              #echo atualizando
               ((ATUALIZADOS++))
               TAM_ATU=$((TAM_ATU + $(stat -c%s "$item"))) 
             fi
