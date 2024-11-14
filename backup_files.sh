@@ -28,15 +28,16 @@ if [[ ! -d "$1" ]]; then # existencia da diretoria especificada
   exit 1
 fi
 
-
 #copiar os arquivos
 copia() {
-  local fonte="$1"
-  local destino="$2"
-
+  fonte="$1"
+  destino="$2"
+  #echo $destino
+  #echo $fonte
   if [[ -d "$destino" || "$fonte" -nt "$destino" ]]; then
-    printf "cp -a '%s''%s'\n" "$fonte" "$destino"
-    if [[ "$MODO_VERIFICAR" == false ]]; then
+    if [[ "$MODO_VERIFICAR" == true ]]; then
+      printf "cp -a '%s''%s'\n" "$fonte" "$destino"
+    elif [[ "$MODO_VERIFICAR" == false ]]; then
       #caso backup nao exista ainda
       if [[ ! -d "$2" ]]; then
         mkdir -p "$(dirname "$destino")"
@@ -50,5 +51,17 @@ copia() {
 for arquivo in "$1"/*; do
   if [[ -f "$arquivo" ]]; then
     copia "$arquivo" "$2/$(basename "$arquivo")"
+  fi
+done
+
+#remover lixo
+for backup_arquivo in "$2"/*; do
+  #echo $destino
+  if [[ -f "$backup_arquivo" && ! -f "$1/$(basename "$backup_arquivo")" ]]; then
+    if [[ "$MODO_VERIFICAR" == false ]]; then
+      rm "$backup_arquivo"
+    elif [ "$MODO_VERIFICAR" == true ]; then
+      printf "rm '%s'\n" "$backup_arquivo"
+    fi
   fi
 done

@@ -31,14 +31,14 @@ if [[ ! -d "$1" ]]; then # existencia da diretoria especificada
   exit 1
 fi
 
-# Carregar lista de exclusão, se fornecida
+#carregar a excluisonsson UQERO DORMIR
 if [[ -n "$BLACKLIST" && -f "$BLACKLIST" ]]; then
   mapfile -t EXCLUSOES < "$BLACKLIST"
 else
   EXCLUSOES=()
 fi
 
-# Função para verificar se um arquivo ou diretório está na lista de exclusão
+#kendrick just opened his mouth, and im bout to put my dick in it now
 esta_na_lista() {
   local arquivo="$1"
   for excluido in "${EXCLUSOES[@]}"; do
@@ -49,48 +49,82 @@ esta_na_lista() {
   return 1
 }
 
-# Função de cópia recursiva
+
 copia_recursiva() {
   local fonte="$1"
   local destino="$2"
 
-  # Loop pelos itens na fonte
+  #fonte
   for item in "$fonte"/*; do
     local nome_base
     nome_base="$(basename "$item")"
     
-    # Ignorar itens na lista de exclusão
+    #exlucions
     if esta_na_lista "$nome_base"; then
       continue
     fi
 
-    # Verificar se o item corresponde à expressão regular, se fornecida
+    #verificar se o item corresponde regex
     if [[ -n "$REGEX" && ! "$nome_base" =~ $REGEX ]]; then
       continue
     fi
 
-    # Cópia de arquivos e recursão para diretórios
+    #copyign
     if [[ -f "$item" ]]; then
-      if [[ "$PRESERVAR_DATAS" == true ]]; then
-        printf "cp -p '%s' '%s'\n" "$item" "$destino/$nome_base"
-      else
-        printf "cp '%s' '%s'\n" "$item" "$destino/$nome_base"
-      fi
-      if [[ "$MODO_VERIFICAR" == false ]]; then
-      #caso backup nao exista ainda
-      if [[ ! -d "$2" ]]; then
-        mkdir -p "$destino" #nao fazer igual ao outro, nao criaa subdiretorio
-      fi
-        if [[ "$PRESERVAR_DATAS" == true ]]; then
-          cp -p "$item" "$destino/$nome_base" || printf "Erro ao copiar '%s'\n" "$item"
+      if [[ ! -f "$destino/$nome_base" || "$item" -nt "$destino/$nome_base" ]]; then
+        if [[ "$MODO_VERIFICAR" == true ]]; then
+          # Modo de verificação: apenas exibe o comando
+          if [[ "$PRESERVAR_DATAS" == true ]]; then
+            printf "cp -p '%s' '%s'\n" "$item" "$destino/$nome_base"
+          else
+            printf "cp '%s' '%s'\n" "$item" "$destino/$nome_base"
+          fi
         else
-          cp "$item" "$destino/$nome_base" || printf "Erro ao copiar '%s'\n" "$item"
+          mkdir -p "$destino"
+          if [[ "$PRESERVAR_DATAS" == true ]]; then
+            cp -p "$item" "$destino/$nome_base" || printf "Erro ao copiar '%s'\n" "$item"
+          else
+            cp "$item" "$destino/$nome_base" || printf "Erro ao copiar '%s'\n" "$item"
+          fi
         fi
       fi
     elif [[ -d "$item" ]]; then
+      # Recursão para subdiretórios
       copia_recursiva "$item" "$destino/$nome_base"
     fi
   done
 }
 
 copia_recursiva "$1" "$2"
+
+#remover lixo
+remover_extras() {
+  local backup_dir="$1"
+  local trabalho_dir="$2"
+
+  for backup_arquivo in "$backup_dir"/*; do
+    local nome_base
+    nome_base="$(basename "$backup_arquivo")"
+
+    if [[ -f "$backup_arquivo" && ! -f "$trabalho_dir/$nome_base" ]]; then
+      # Remove arquivo extra
+      if [[ "$MODO_VERIFICAR" == false ]]; then
+        rm "$backup_arquivo"
+      else
+        printf "rm '%s'\n" "$backup_arquivo"
+      fi
+    elif [[ -d "$backup_arquivo" && ! -d "$trabalho_dir/$nome_base" ]]; then
+      # Remove diretório extra
+      if [[ "$MODO_VERIFICAR" == false ]]; then
+        rm -rf "$backup_arquivo"
+      else
+        printf "rm -rf '%s'\n" "$backup_arquivo"
+      fi
+    elif [[ -d "$backup_arquivo" ]]; then
+      #subd
+      remover_extras "$backup_arquivo" "$trabalho_dir/$nome_base"
+    fi
+  done
+}
+
+remover_extras "$2" "$1"
