@@ -33,6 +33,7 @@ fi
 
 #carregar a excluisonsson UQERO DORMIR
 if [[ -n "$BLACKLIST" && -f "$BLACKLIST" ]]; then
+  #echo $BLACKLIST
   mapfile -t EXCLUSOES < "$BLACKLIST"
 else
   EXCLUSOES=()
@@ -42,7 +43,9 @@ fi
 esta_na_lista() {
   local arquivo="$1"
   for excluido in "${EXCLUSOES[@]}"; do
-    if [[ "$arquivo" == "$excluido" ]]; then
+  #echo a $arquivo
+  #echo o $excluido
+    if [[ "$arquivo" == "$excluido" || "$arquivo" == "$excluido/"* ]]; then
       return 0
     fi
   done
@@ -102,27 +105,35 @@ remover_extras() {
   local backup_dir="$1"
   local trabalho_dir="$2"
 
+  
+
   for backup_arquivo in "$backup_dir"/*; do
     local nome_base
     nome_base="$(basename "$backup_arquivo")"
 
-    if [[ -f "$backup_arquivo" && ! -f "$trabalho_dir/$nome_base" ]]; then
-      # Remove arquivo extra
-      if [[ "$MODO_VERIFICAR" == false ]]; then
-        rm "$backup_arquivo"
-      else
-        printf "rm '%s'\n" "$backup_arquivo"
+    #if [[ -f "$backup_arquivo" &&  ! -f "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
+    if [[ -f "$backup_arquivo" ]]; then
+      if [[ ! -f "$trabalho_dir/$nome_base" ]] ||  esta_na_lista "$nome_base"; then
+        # Remove arquivo extra
+        if [[ "$MODO_VERIFICAR" == false ]]; then
+          rm "$backup_arquivo"
+        else
+          printf "rm '%s'\n" "$backup_arquivo"
+        fi
       fi
-    elif [[ -d "$backup_arquivo" && ! -d "$trabalho_dir/$nome_base" ]]; then
-      # Remove diretório extra
-      if [[ "$MODO_VERIFICAR" == false ]]; then
-        rm -rf "$backup_arquivo"
-      else
-        printf "rm -rf '%s'\n" "$backup_arquivo"
-      fi
+    #elif [[ -d "$backup_arquivo" && ! -d "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
     elif [[ -d "$backup_arquivo" ]]; then
-      #subd
-      remover_extras "$backup_arquivo" "$trabalho_dir/$nome_base"
+      if [[ ! -d "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
+        # Remove diretório extra
+        if [[ "$MODO_VERIFICAR" == false ]]; then
+          rm -rf "$backup_arquivo"
+        else
+          printf "rm -rf '%s'\n" "$backup_arquivo"
+        fi
+      fi
+      else
+        #subd
+        remover_extras "$backup_arquivo" "$trabalho_dir/$nome_base"
     fi
   done
 }
