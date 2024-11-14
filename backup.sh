@@ -10,14 +10,12 @@ fi
 MODO_VERIFICAR=false
 REGEX=""
 BLACKLIST=""
-PRESERVAR_DATAS=false
 
-while getopts ":cr:b:a" opt; do
+while getopts ":cr:b" opt; do
   case $opt in
     c) MODO_VERIFICAR=true ;;
     r) REGEX="$OPTARG" ;;
     b) BLACKLIST="$OPTARG" ;;
-    a) PRESERVAR_DATAS=true ;;
     \?) printf "Opção inválida: -%s\n" "$OPTARG" >&2; uso ;;
     #:) printf "Opção -%s requer um argumento\n" "$OPTARG" >&2; uso ;;
   esac
@@ -26,7 +24,7 @@ shift $((OPTIND - 1))
 
 
 
-if [[ ! -d "$1" ]]; then # existencia da diretoria especificada
+if [[ ! -d "$1" ]]; then #existencia da diretoria especificada
   printf "Erro: diretoria '%s' não existe.\n" "$1"
   exit 1
 fi
@@ -76,7 +74,6 @@ copia_recursiva() {
     if [[ -f "$item" ]]; then
       if [[ ! -f "$destino/$nome_base" || "$item" -nt "$destino/$nome_base" ]]; then
         if [[ "$MODO_VERIFICAR" == true ]]; then
-          # Modo de verificação: apenas exibe o comando
           if [[ "$PRESERVAR_DATAS" == true ]]; then
             printf "cp -p '%s' '%s'\n" "$item" "$destino/$nome_base"
           else
@@ -92,7 +89,7 @@ copia_recursiva() {
         fi
       fi
     elif [[ -d "$item" ]]; then
-      # Recursão para subdiretórios
+      #subd
       copia_recursiva "$item" "$destino/$nome_base"
     fi
   done
@@ -105,8 +102,6 @@ remover_extras() {
   local backup_dir="$1"
   local trabalho_dir="$2"
 
-  
-
   for backup_arquivo in "$backup_dir"/*; do
     local nome_base
     nome_base="$(basename "$backup_arquivo")"
@@ -114,7 +109,7 @@ remover_extras() {
     #if [[ -f "$backup_arquivo" &&  ! -f "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
     if [[ -f "$backup_arquivo" ]]; then
       if [[ ! -f "$trabalho_dir/$nome_base" ]] ||  esta_na_lista "$nome_base"; then
-        # Remove arquivo extra
+        #remover ficheiro
         if [[ "$MODO_VERIFICAR" == false ]]; then
           rm "$backup_arquivo"
         else
@@ -124,16 +119,16 @@ remover_extras() {
     #elif [[ -d "$backup_arquivo" && ! -d "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
     elif [[ -d "$backup_arquivo" ]]; then
       if [[ ! -d "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
-        # Remove diretório extra
+        #remover pasta
         if [[ "$MODO_VERIFICAR" == false ]]; then
           rm -rf "$backup_arquivo"
         else
           printf "rm -rf '%s'\n" "$backup_arquivo"
         fi
-      fi
       else
         #subd
         remover_extras "$backup_arquivo" "$trabalho_dir/$nome_base"
+      fi
     fi
   done
 }
