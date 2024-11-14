@@ -19,6 +19,7 @@ while getopts ":c" opt; do
   case $opt in
     c) MODO_VERIFICAR=true ;;
     \?) printf "Opção inválida: -%s\n" "$OPTARG" >&2; uso ;;
+    :) printf "Opção -%s requer um argumento\n" "$OPTARG" >&2; uso ;;
   esac
 done
 shift $((OPTIND - 1))

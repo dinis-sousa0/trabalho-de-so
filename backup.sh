@@ -17,7 +17,7 @@ while getopts ":cr:b" opt; do
     r) REGEX="$OPTARG" ;;
     b) BLACKLIST="$OPTARG" ;;
     \?) printf "Opção inválida: -%s\n" "$OPTARG" >&2; uso ;;
-    #:) printf "Opção -%s requer um argumento\n" "$OPTARG" >&2; uso ;;
+    :) printf "Opção -%s requer um argumento\n" "$OPTARG" >&2; uso ;;
   esac
 done
 shift $((OPTIND - 1))
@@ -74,18 +74,10 @@ copia_recursiva() {
     if [[ -f "$item" ]]; then
       if [[ ! -f "$destino/$nome_base" || "$item" -nt "$destino/$nome_base" ]]; then
         if [[ "$MODO_VERIFICAR" == true ]]; then
-          if [[ "$PRESERVAR_DATAS" == true ]]; then
-            printf "cp -p '%s' '%s'\n" "$item" "$destino/$nome_base"
-          else
-            printf "cp '%s' '%s'\n" "$item" "$destino/$nome_base"
-          fi
+          printf "cp -a '%s' '%s'\n" "$item" "$destino/$nome_base"
         else
           mkdir -p "$destino"
-          if [[ "$PRESERVAR_DATAS" == true ]]; then
-            cp -p "$item" "$destino/$nome_base" || printf "Erro ao copiar '%s'\n" "$item"
-          else
-            cp "$item" "$destino/$nome_base" || printf "Erro ao copiar '%s'\n" "$item"
-          fi
+          cp -p "$item" "$destino/$nome_base" || printf "Erro ao copiar '%s'\n" "$item"
         fi
       fi
     elif [[ -d "$item" ]]; then
