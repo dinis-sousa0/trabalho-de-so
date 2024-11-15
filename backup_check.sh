@@ -11,23 +11,24 @@ verifica_diferenca() {
   local arquivo_trabalho="$1"
   local arquivo_backup="$2"
 
-  md5_trabalho=$(md5sum "$arquivo_trabalho" | awk '{print $1}') #calculs
+  #calcula
+  md5_trabalho=$(md5sum "$arquivo_trabalho" | awk '{print $1}')
   md5_backup=$(md5sum "$arquivo_backup" | awk '{print $1}')
 
-  #e compara
+  #compara
   if [[ "$md5_trabalho" != "$md5_backup" ]]; then
-    printf "%s %s differ." "$arquivo_trabalho" "$arquivo_backup"
-  else
-    echo ola
+    printf "%s %s differ.\n" "$arquivo_trabalho" "$arquivo_backup"
+  #else
+    #printf "%s %s iguais\n" "$arquivo_trabalho" "$arquivo_backup"
   fi
 }
 
-#faz para cada arquivo
+#perceorre na pasta source
 find "$1" -type f | while read -r arquivo_trabalho; do
-  #caminho corresepondente
+  #faz o caminho pa do backup
   arquivo_backup="${2}${arquivo_trabalho#$1}"
 
-  #caso existe compara
+  #compara so se existir
   if [[ -f "$arquivo_backup" ]]; then
     verifica_diferenca "$arquivo_trabalho" "$arquivo_backup"
   fi
