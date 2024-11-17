@@ -9,7 +9,7 @@ fi
 #verificar para os 2 ficheiros se a hash e igual
 verifica_diferenca() {
   local arquivo_trabalho="$1"
-  local arquivo_backup="$2"
+  local arquivo_backup="$2"`
 
   #calcula
   md5_trabalho=$(md5sum "$arquivo_trabalho" | awk '{print $1}')
@@ -18,8 +18,8 @@ verifica_diferenca() {
   #compara
   if [[ "$md5_trabalho" != "$md5_backup" ]]; then
     printf "%s %s differ.\n" "$arquivo_trabalho" "$arquivo_backup"
-  #else
-    #printf "%s %s iguais\n" "$arquivo_trabalho" "$arquivo_backup"
+  else
+    printf "%s %s iguais\n" "$arquivo_trabalho" "$arquivo_backup"
   fi
 }
 
