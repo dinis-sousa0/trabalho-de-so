@@ -45,7 +45,6 @@ else
   EXCLUSOES=()
 fi
 
-#kendrick just opened his mouth, and im bout to put my dick in it now
 esta_na_lista() {
   local arquivo="$1"
   for excluido in "${EXCLUSOES[@]}"; do
@@ -59,66 +58,60 @@ esta_na_lista() {
 }
 
 copia_recursiva() {
-  local fonte="$1"
+  local fuente="$1"
   local destino="$2"
 
-  #fonte
-  for item in "$fonte"/*; do
-    local nome_base
-    nome_base="$(basename "$item")"
-    atualizacao=0
-    
-    #exlucions
-    if esta_na_lista "$nome_base"; then
+  # Crear el directorio de destino si no existe
+  mkdir -p "$destino"
+
+  for item in "$fuente"/*; do
+    local nombre_base
+    nombre_base="$(basename "$item")"
+    local actualizacion=0
+
+    # Saltar si está en la blacklist
+    if esta_na_lista "$nombre_base"; then
       continue
     fi
 
-    #verificar se o item corresponde regex
-    if [[ -n "$REGEX" && ! "$nome_base" =~ $REGEX ]]; then
+    # Verificar si el nombre cumple con el regex (si se especifica)
+    if [[ -n "$REGEX" && ! "$nombre_base" =~ $REGEX ]]; then
       continue
     fi
 
-    #copyign
     if [[ -f "$item" ]]; then
-      if [[ ! -f "$destino/$nome_base" || "$item" -nt "$destino/$nome_base" ]]; then
-        if [[ "$item" -nt "$destino/$nome_base" && -f "$destino/$nome_base" ]]; then
-          atualizacao=1
+      # Copiar archivos
+      if [[ ! -f "$destino/$nombre_base" || "$item" -nt "$destino/$nombre_base" ]]; then
+        # Verificar si es una actualización
+        if [[ -f "$destino/$nombre_base" && "$item" -nt "$destino/$nombre_base" ]]; then
+          actualizacion=1
         fi
+
         if [[ "$MODO_VERIFICAR" == true ]]; then
-          if [ $atualizacao == 0 ]; then
-            printf "cp -a '%s' '%s'\n" "$item" "$destino/$nome_base"
-            TAM_COP=$((TAM_COP + $(stat -c%s "$item"))) 
-            ((COPIADOS++))
-          elif [ $atualizacao == 1 ]; then
-            printf "cp -a '%s' '%s'\n" "$item" "$destino/$nome_base"
-            TAM_ATU=$((TAM_ATU + $(stat -c%s "$item"))) 
-            ((ATUALIZADOS++))
-          fi
+          printf "cp -a '%s' '%s'\n" "$item" "$destino/$nombre_base"
         else
-          mkdir -p "$destino"
-          if cp -a "$item" "$destino/$nome_base"; then
-            if [ $atualizacao == 0 ]; then
-              #echo copiando
-              ((COPIADOS++))
-              TAM_COP=$((TAM_COP + $(stat -c%s "$item"))) 
-              #echo "Size of $item = $TAM_COP bytes."
-            elif [ $atualizacao == 1 ]; then
-              #echo atualizando
-              ((ATUALIZADOS++))
-              TAM_ATU=$((TAM_ATU + $(stat -c%s "$item"))) 
-            fi
-          else
-            printf "Erro ao copiar '%s'\n" "$item"
-            ((ERROR++))
-          fi
+          cp -a "$item" "$destino/$nombre_base"
         fi
-      elif [[ "$item" -ot "$destino/$nome_base" ]]; then
-        printf "WARNING: backup entry %s is newer than %s; Should not happen\n" "$2" "$1"
+
+        # Actualizar estadísticas
+        local tam
+        tam=$(stat -c%s "$item")
+        if [[ "$actualizacion" == 0 ]]; then
+          ((COPIADOS++))
+          TAM_COP=$((TAM_COP + tam))
+        else
+          ((ATUALIZADOS++))
+          TAM_ATU=$((TAM_ATU + tam))
+        fi
+      elif [[ "$item" -ot "$destino/$nombre_base" ]]; then
+        # Generar un warning si el archivo de destino es más reciente
+        printf "WARNING: backup entry '%s/%s' is newer than '%s/%s'; should not happen\n" \
+          "$destino" "$nombre_base" "$fuente" "$nombre_base"
         ((WARNINGS++))
       fi
     elif [[ -d "$item" ]]; then
-      #subd
-      copia_recursiva "$item" "$destino/$nome_base"
+      # Manejar subdirectorios recursivamente
+      copia_recursiva "$item" "$destino/$nombre_base"
     fi
   done
 }
