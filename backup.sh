@@ -29,7 +29,7 @@ if [[ ! -d "$1" ]]; then #existencia da diretoria especificada
   exit 1
 fi
 
-#carregar a excluisonsson UQERO DORMIR
+#carregar a excluisonsson
 if [[ -n "$BLACKLIST" && -f "$BLACKLIST" ]]; then
   #echo $BLACKLIST
   mapfile -t EXCLUSOES < "$BLACKLIST"
@@ -37,7 +37,7 @@ else
   EXCLUSOES=()
 fi
 
-#kendrick just opened his mouth, and im bout to put my dick in it now
+#verificar se esta nas exclusins
 esta_na_lista() {
   local arquivo="$1"
   for excluido in "${EXCLUSOES[@]}"; do
@@ -60,7 +60,7 @@ copia_recursiva() {
     local nome_base
     nome_base="$(basename "$item")"
     
-    #exlucions
+    #exlusoes
     if esta_na_lista "$nome_base"; then
       continue
     fi
@@ -70,14 +70,14 @@ copia_recursiva() {
       continue
     fi
 
-    #copyign
+    #copia
     if [[ -f "$item" ]]; then
       if [[ ! -f "$destino/$nome_base" || "$item" -nt "$destino/$nome_base" ]]; then
         if [[ "$MODO_VERIFICAR" == true ]]; then
-          printf "cp -a '%s' '%s'\n" "$item" "$destino/$nome_base"
+          printf "cp -a %s %s\n" "$item" "$destino/$nome_base"
         else
           mkdir -p "$destino"
-          cp -p "$item" "$destino/$nome_base" || printf "Erro ao copiar '%s'\n" "$item"
+          cp -p "$item" "$destino/$nome_base" || printf "Erro ao copiar %s\n" "$item"
         fi
       fi
     elif [[ -d "$item" ]]; then
@@ -94,32 +94,32 @@ remover_extras() {
   local backup_dir="$1"
   local trabalho_dir="$2"
 
-  for backup_arquivo in "$backup_dir"/*; do
+  for item in "$backup_dir"/*; do
     local nome_base
-    nome_base="$(basename "$backup_arquivo")"
+    nome_base="$(basename "$item")"
 
-    #if [[ -f "$backup_arquivo" &&  ! -f "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
-    if [[ -f "$backup_arquivo" ]]; then
+    #if [[ -f "$item" &&  ! -f "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
+    if [[ -f "$item" ]]; then
       if [[ ! -f "$trabalho_dir/$nome_base" ]] ||  esta_na_lista "$nome_base"; then
         #remover ficheiro
         if [[ "$MODO_VERIFICAR" == false ]]; then
-          rm "$backup_arquivo"
+          rm "$item"
         else
-          printf "rm '%s'\n" "$backup_arquivo"
+          printf "rm %s\n" "$item"
         fi
       fi
-    #elif [[ -d "$backup_arquivo" && ! -d "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
-    elif [[ -d "$backup_arquivo" ]]; then
+    #elif [[ -d "$item" && ! -d "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
+    elif [[ -d "$item" ]]; then
       if [[ ! -d "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
         #remover pasta
         if [[ "$MODO_VERIFICAR" == false ]]; then
-          rm -rf "$backup_arquivo"
+          rm -rf "$item"
         else
-          printf "rm -rf '%s'\n" "$backup_arquivo"
+          printf "rm -rf %s\n" "$item"
         fi
       else
         #subd
-        remover_extras "$backup_arquivo" "$trabalho_dir/$nome_base"
+        remover_extras "$item" "$trabalho_dir/$nome_base"
       fi
     fi
   done

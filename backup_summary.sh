@@ -1,4 +1,5 @@
 #!/bin/bash
+#set -x
 
 #verificaoes
 if [[ "$#" -lt 2 ]]; then #numero argumentos
@@ -37,7 +38,7 @@ if [[ ! -d "$1" ]]; then #existencia da diretoria especificada
   exit 1
 fi
 
-#carregar a excluisonsson UQERO DORMIR
+#carregar a excluisonsson
 if [[ -n "$BLACKLIST" && -f "$BLACKLIST" ]]; then
   #echo $BLACKLIST
   mapfile -t EXCLUSOES < "$BLACKLIST"
@@ -45,7 +46,7 @@ else
   EXCLUSOES=()
 fi
 
-#kendrick just opened his mouth, and im bout to put my dick in it now
+#verificar se esta nas exclusins
 esta_na_lista() {
   local arquivo="$1"
   for excluido in "${EXCLUSOES[@]}"; do
@@ -58,17 +59,35 @@ esta_na_lista() {
   return 1
 }
 
+
+
+#imp resumo cada diretorio
+imprimir_resumo() {
+  local dir="$1"
+  printf "While backuping %s: %d Errors; %d Warnings; %d Updated; %d Copied (%dB); %d Deleted (%dB)\n" \
+         "$dir" "$ERROR" "$WARNINGS" "$ATUALIZADOS" "$COPIADOS" "$TAM_COP" "$APAGADOS" "$TAM_APA"
+}
+
 copia_recursiva() {
   local fonte="$1"
   local destino="$2"
+
+  local local_error=0
+  local local_warnings=0
+  local local_atualizados=0
+  local local_copiados=0
+  local local_apagados=0
+  local local_tam_cop=0
+  local local_tam_atu=0
+  local local_tam_apa=0
 
   #fonte
   for item in "$fonte"/*; do
     local nome_base
     nome_base="$(basename "$item")"
-    atualizacao=0
+    local atualizacao=0
     
-    #exlucions
+    #exclusoes
     if esta_na_lista "$nome_base"; then
       continue
     fi
@@ -78,7 +97,7 @@ copia_recursiva() {
       continue
     fi
 
-    #copyign
+    #copia
     if [[ -f "$item" ]]; then
       if [[ ! -f "$destino/$nome_base" || "$item" -nt "$destino/$nome_base" ]]; then
         if [[ "$item" -nt "$destino/$nome_base" && -f "$destino/$nome_base" ]]; then
@@ -86,41 +105,52 @@ copia_recursiva() {
         fi
         if [[ "$MODO_VERIFICAR" == true ]]; then
           if [ $atualizacao == 0 ]; then
-            printf "cp -a '%s' '%s'\n" "$item" "$destino/$nome_base"
-            TAM_COP=$((TAM_COP + $(stat -c%s "$item"))) 
-            ((COPIADOS++))
+            printf "cp -a %s %s\n" "$item" "$destino/$nome_base"
+            local_tam_cop=$((local_tam_cop + $(stat -c%s "$item"))) 
+            ((local_copiados++))
           elif [ $atualizacao == 1 ]; then
-            printf "cp -a '%s' '%s'\n" "$item" "$destino/$nome_base"
-            TAM_ATU=$((TAM_ATU + $(stat -c%s "$item"))) 
-            ((ATUALIZADOS++))
+            printf "cp -a %s %s\n" "$item" "$destino/$nome_base"
+            local_tam_atu=$((local_tam_atu + $(stat -c%s "$item"))) 
+            ((local_atualizados++))
           fi
         else
           mkdir -p "$destino"
           if cp -a "$item" "$destino/$nome_base"; then
+            printf "cp -a %s %s\n" "$item" "$destino/$nome_base"
             if [ $atualizacao == 0 ]; then
-              #echo copiando
-              ((COPIADOS++))
-              TAM_COP=$((TAM_COP + $(stat -c%s "$item"))) 
-              #echo "Size of $item = $TAM_COP bytes."
+              ((local_copiados++))
+              local_tam_cop=$((local_tam_cop + $(stat -c%s "$item"))) 
             elif [ $atualizacao == 1 ]; then
-              #echo atualizando
-              ((ATUALIZADOS++))
-              TAM_ATU=$((TAM_ATU + $(stat -c%s "$item"))) 
+              ((local_atualizados++))
+              local_tam_atu=$((local_tam_atu + $(stat -c%s "$item"))) 
             fi
           else
             printf "Erro ao copiar '%s'\n" "$item"
-            ((ERROR++))
+            ((local_error++))
           fi
         fi
       elif [[ "$item" -ot "$destino/$nome_base" ]]; then
         printf "WARNING: backup entry %s is newer than %s; Should not happen\n" "$2" "$1"
-        ((WARNINGS++))
+        ((local_warnings++))
       fi
     elif [[ -d "$item" ]]; then
       #subd
       copia_recursiva "$item" "$destino/$nome_base"
     fi
   done
+
+  #globais a partir dos locais
+  ERROR=$((ERROR + local_error))
+  WARNINGS=$((WARNINGS + local_warnings))
+  ATUALIZADOS=$((ATUALIZADOS + local_atualizados))
+  COPIADOS=$((COPIADOS + local_copiados))
+  APAGADOS=$((APAGADOS + local_apagados))
+  TAM_COP=$((TAM_COP + local_tam_cop))
+  TAM_ATU=$((TAM_ATU + local_tam_atu))
+  TAM_APA=$((TAM_APA + local_tam_apa))
+
+  #resumo do subd atual
+  imprimir_resumo "$fonte"
 }
 
 copia_recursiva "$1" "$2"
@@ -137,25 +167,24 @@ remover_extras() {
     #if [[ -f "$item" &&  ! -f "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
     if [[ -f "$item" ]]; then
       if [[ ! -f "$trabalho_dir/$nome_base" ]] ||  esta_na_lista "$nome_base"; then
-        local tam_item #nao e redundante, e necessario guardar antes de apagar
+        local tam_item #nao e redundante, necessario guardar antes de apagar
         tam_item=$(stat -c%s "$item")
-        #remover ficheiro
+        #remover arquivo
         if [[ "$MODO_VERIFICAR" == false ]]; then
           rm "$item"
         else
-          printf "rm '%s'\n" "$item"
+          printf "rm %s\n" "$item"
         fi
         ((APAGADOS++))
         TAM_APA=$((TAM_APA + tam_item))
       fi
-    #elif [[ -d "$item" && ! -d "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
     elif [[ -d "$item" ]]; then
       if [[ ! -d "$trabalho_dir/$nome_base" ]] || esta_na_lista "$nome_base"; then
         #remover pasta
         if [[ "$MODO_VERIFICAR" == false ]]; then
           rm -rf "$item"
         else
-          printf "rm -rf '%s'\n" "$item"
+          printf "rm -rf %s\n" "$item"
         fi
         ((APAGADOS++))
         TAM_APA=$((TAM_APA + tam_item))
@@ -169,4 +198,4 @@ remover_extras() {
 
 remover_extras "$2" "$1"
 
-printf "While backuping %s: %d Errors; %d Warnings; %d Updated (%dB); %d Copied (%dB); %d Deleted (%dB)\n" "$1" "$ERROR" "$WARNINGS" "$ATUALIZADOS" "$TAM_ATU" "$COPIADOS" "$TAM_COP" "$APAGADOS" "$TAM_APA"
+imprimir_resumo "$1"

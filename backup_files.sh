@@ -37,7 +37,7 @@ copia() {
   #echo $fonte
   if [[ -d "$destino" || "$fonte" -nt "$destino" ]]; then
     if [[ "$MODO_VERIFICAR" == true ]]; then
-      printf "cp -a '%s''%s'\n" "$fonte" "$destino"
+      printf "cp -a %s %s\n" "$fonte" "$destino"
     elif [[ "$MODO_VERIFICAR" == false ]]; then
       #caso backup nao exista ainda
       if [[ ! -d "$2" ]]; then
@@ -62,7 +62,7 @@ for backup_arquivo in "$2"/*; do
     if [[ "$MODO_VERIFICAR" == false ]]; then
       rm "$backup_arquivo"
     elif [ "$MODO_VERIFICAR" == true ]; then
-      printf "rm '%s'\n" "$backup_arquivo"
+      printf "rm %s\n" "$backup_arquivo"
     fi
   fi
 done
