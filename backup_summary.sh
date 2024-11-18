@@ -69,7 +69,7 @@ imprimir_resumo() {
 }
 
 copia_recursiva() {
-  local fuente="$1"
+  local fonte="$1"
   local destino="$2"
 
   local local_error=0
@@ -87,25 +87,22 @@ copia_recursiva() {
     nome_base="$(basename "$item")"
     local atualizacao=0
     
-    #exclusoes
+    #exclucions
     if esta_na_lista "$nome_base"; then
       continue
     fi
 
-    # Verificar si el nombre cumple con el regex (si se especifica)
-    if [[ -n "$REGEX" && ! "$nombre_base" =~ $REGEX ]]; then
+    #verificar se o item corresponde regex
+    if [[ -n "$REGEX" && ! "$nome_base" =~ $REGEX ]]; then
       continue
     fi
 
-    #copia
+    #copyign
     if [[ -f "$item" ]]; then
-      # Copiar archivos
-      if [[ ! -f "$destino/$nombre_base" || "$item" -nt "$destino/$nombre_base" ]]; then
-        # Verificar si es una actualización
-        if [[ -f "$destino/$nombre_base" && "$item" -nt "$destino/$nombre_base" ]]; then
-          actualizacion=1
+      if [[ ! -f "$destino/$nome_base" || "$item" -nt "$destino/$nome_base" ]]; then
+        if [[ "$item" -nt "$destino/$nome_base" && -f "$destino/$nome_base" ]]; then
+          atualizacao=1
         fi
-
         if [[ "$MODO_VERIFICAR" == true ]]; then
           if [ $atualizacao == 0 ]; then
             printf "cp -a %s %s\n" "$item" "$destino/$nome_base"
@@ -137,8 +134,8 @@ copia_recursiva() {
         ((local_warnings++))
       fi
     elif [[ -d "$item" ]]; then
-      # Manejar subdirectorios recursivamente
-      copia_recursiva "$item" "$destino/$nombre_base"
+      #subd
+      copia_recursiva "$item" "$destino/$nome_base"
     fi
   done
 

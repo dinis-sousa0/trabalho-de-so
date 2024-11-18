@@ -8,4 +8,5 @@ test_a1.sh
 test_a1.out
 toni/
 backup_summary copy.sh
-
+diego.sh
+pila.sh
