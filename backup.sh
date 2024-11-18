@@ -11,7 +11,7 @@ MODO_VERIFICAR=false
 REGEX=""
 BLACKLIST=""
 
-while getopts ":cr:b" opt; do
+while getopts ":cr:b:" opt; do
   case $opt in
     c) MODO_VERIFICAR=true ;;
     r) REGEX="$OPTARG" ;;

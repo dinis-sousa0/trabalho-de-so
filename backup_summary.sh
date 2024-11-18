@@ -12,7 +12,7 @@ MODO_VERIFICAR=false
 REGEX=""
 BLACKLIST=""
 
-while getopts ":cr:b" opt; do
+while getopts ":cr:b:" opt; do
   case $opt in
     c) MODO_VERIFICAR=true ;;
     r) REGEX="$OPTARG" ;;
@@ -37,6 +37,7 @@ if [[ ! -d "$1" ]]; then #existencia da diretoria especificada
   printf "Erro: diretoria '%s' não existe.\n" "$1"
   exit 1
 fi
+
 
 #carregar a excluisonsson
 if [[ -n "$BLACKLIST" && -f "$BLACKLIST" ]]; then
@@ -198,4 +199,4 @@ remover_extras() {
 
 remover_extras "$2" "$1"
 
-imprimir_resumo "$1"
+imprimir_resumo "$1" #preciso para mostrar os ficheiros apagados
